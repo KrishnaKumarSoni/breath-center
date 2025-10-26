@@ -5,20 +5,18 @@ from datetime import datetime, timedelta
 
 app = Flask(__name__)
 
-# Data file for storing sessions and streaks
-DATA_FILE = 'breath_data.json'
+# For Vercel deployment, we'll use in-memory storage
+# In production, this should be replaced with a proper database
+sessions_data = {'sessions': [], 'streak': 0, 'last_session_date': None}
 
 def load_data():
-    """Load session data from file"""
-    if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, 'r') as f:
-            return json.load(f)
-    return {'sessions': [], 'streak': 0, 'last_session_date': None}
+    """Load session data from memory"""
+    return sessions_data
 
 def save_data(data):
-    """Save session data to file"""
-    with open(DATA_FILE, 'w') as f:
-        json.dump(data, f)
+    """Save session data to memory"""
+    global sessions_data
+    sessions_data = data
 
 def update_streak(data):
     """Update streak counter based on session completion"""
