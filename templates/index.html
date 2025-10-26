@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Breath Center</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=Manrope:wght@300;400;500;600&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #faf9f7 0%, #f5f3f0 50%, #f0ede8 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #2c2c2c;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .header {
+            margin-bottom: 2rem;
+        }
+
+        .title {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.5rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: #1a1a1a;
+        }
+
+        .subtitle {
+            font-size: 1rem;
+            color: #666;
+            font-weight: 300;
+        }
+
+        .streak {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            background: rgba(255, 255, 255, 0.7);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            color: #2c2c2c;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .controls {
+            margin-bottom: 3rem;
+        }
+
+        .bpm-selector {
+            margin-bottom: 1.5rem;
+        }
+
+        .custom-dropdown {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .dropdown-trigger {
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            color: #2c2c2c;
+            padding: 0.8rem 1.5rem;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            outline: none;
+            cursor: pointer;
+            font-family: 'Manrope', sans-serif;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .dropdown-trigger:hover {
+            background: rgba(255, 255, 255, 0.9);
+            border-color: rgba(0, 0, 0, 0.2);
+        }
+
+        .dropdown-arrow {
+            transition: transform 0.3s ease;
+        }
+
+        .dropdown-arrow.open {
+            transform: rotate(180deg);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 15px;
+            margin-top: 0.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+        }
+
+        .dropdown-menu.open {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-item {
+            padding: 0.8rem 1.5rem;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .dropdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-item:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .dropdown-item.selected {
+            background: rgba(44, 44, 44, 0.1);
+            font-weight: 500;
+        }
+
+        .start-btn {
+            background: #2c2c2c;
+            color: #faf9f7;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 30px;
+            font-size: 1.2rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 200px;
+            font-family: 'Manrope', sans-serif;
+        }
+
+        .start-btn:hover {
+            background: #1a1a1a;
+            transform: translateY(-2px);
+        }
+
+        .start-btn:active {
+            transform: translateY(0);
+        }
+
+        .breathing-container {
+            position: relative;
+            margin: 2rem auto;
+            width: 300px;
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .breathing-circle {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,180,100,0.8) 0%, rgba(255,100,60,0.6) 100%);
+            position: relative;
+            transition: all 0.1s ease-out;
+            box-shadow: 0 0 30px rgba(255,180,100,0.3);
+        }
+
+        .breathing-circle.inhale {
+            transform: scale(1.4);
+            background: radial-gradient(circle, rgba(255,180,100,1) 0%, rgba(255,100,60,0.8) 100%);
+            box-shadow: 0 0 40px rgba(255,180,100,0.5);
+        }
+
+        .breathing-circle.exhale {
+            transform: scale(0.6);
+            background: radial-gradient(circle, rgba(255,180,100,0.6) 0%, rgba(255,100,60,0.4) 100%);
+            box-shadow: 0 0 20px rgba(255,180,100,0.2);
+        }
+
+        .progress-ring {
+            position: absolute;
+            width: 200px;
+            height: 200px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .progress-ring svg {
+            width: 100%;
+            height: 100%;
+            transform: rotate(-90deg);
+        }
+
+        .progress-ring circle {
+            fill: none;
+            stroke: rgba(255,180,100,0.3);
+            stroke-width: 2;
+            stroke-dasharray: 628;
+            stroke-dashoffset: 628;
+            transition: stroke-dashoffset 0.1s ease-out;
+        }
+
+        .instruction-text {
+            position: absolute;
+            bottom: -3rem;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.9rem;
+            color: #666;
+            font-weight: 300;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .instruction-text.show {
+            opacity: 1;
+        }
+
+        .session-info {
+            margin-top: 2rem;
+            font-size: 1.1rem;
+        }
+
+        .timer {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            font-weight: 500;
+            margin-bottom: 1rem;
+            color: #1a1a1a;
+        }
+
+        .phase-text {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            color: #666;
+            font-weight: 400;
+        }
+
+        .session-complete {
+            background: rgba(255, 255, 255, 0.7);
+            padding: 2rem;
+            border-radius: 20px;
+            margin-top: 2rem;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .session-complete h2 {
+            font-family: 'Playfair Display', serif;
+            color: #1a1a1a;
+            margin-bottom: 1rem;
+        }
+
+        .session-complete p {
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            margin: 1rem 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: rgba(255, 180, 100, 0.8);
+            border-radius: 2px;
+            transition: width 0.1s linear;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.open {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .calendar-modal {
+            background: #faf9f7;
+            border-radius: 20px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.open .calendar-modal {
+            transform: scale(1);
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .calendar-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            color: #1a1a1a;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+            padding: 0.5rem;
+            border-radius: 50%;
+            transition: background 0.2s ease;
+        }
+
+        .close-btn:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .calendar-day.other-month {
+            color: #ccc;
+        }
+
+        .calendar-day.today {
+            background: rgba(255, 180, 100, 0.2);
+            font-weight: 600;
+        }
+
+        .calendar-day.completed {
+            background: rgba(255, 180, 100, 0.6);
+            color: white;
+            font-weight: 500;
+        }
+
+        .calendar-day.completed::after {
+            content: '✓';
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            font-size: 0.7rem;
+        }
+
+        .calendar-day:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .calendar-day.completed:hover {
+            background: rgba(255, 180, 100, 0.8);
+        }
+
+        .calendar-stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 0.2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="streak" id="streak" style="cursor: pointer;">Streak: 0</div>
+    
+    <div class="container">
+        <div class="header">
+            <h1 class="title">Breath Center</h1>
+            <p class="subtitle">10-minute breathing ritual</p>
+        </div>
+
+        <div class="controls" id="controls">
+            <div class="bpm-selector">
+                <div class="custom-dropdown" id="bpmDropdown">
+                    <div class="dropdown-trigger" id="dropdownTrigger">
+                        <span id="dropdownText">6 breaths/min (10s cycle)</span>
+                        <span class="dropdown-arrow" id="dropdownArrow">▼</span>
+                    </div>
+                    <div class="dropdown-menu" id="dropdownMenu">
+                        <div class="dropdown-item selected" data-value="6">6 breaths/min (10s cycle)</div>
+                        <div class="dropdown-item" data-value="5">5 breaths/min (12s cycle)</div>
+                        <div class="dropdown-item" data-value="4">4 breaths/min (15s cycle)</div>
+                        <div class="dropdown-item" data-value="3">3 breaths/min (20s cycle)</div>
+                    </div>
+                </div>
+            </div>
+            <button class="start-btn" id="startBtn">Start 10 min Session</button>
+        </div>
+
+        <div class="breathing-container">
+            <div class="progress-ring">
+                <svg>
+                    <circle cx="100" cy="100" r="100"></circle>
+                </svg>
+            </div>
+            <div class="breathing-circle" id="breathingCircle"></div>
+            <div class="instruction-text" id="instructionText">Follow the circle</div>
+        </div>
+
+        <div class="session-info hidden" id="sessionInfo">
+            <div class="timer" id="timer">10:00</div>
+            <div class="phase-text" id="phaseText">Phase: 6 breaths/min</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+
+        <div class="session-complete hidden" id="sessionComplete">
+            <h2>Session Complete! 🎉</h2>
+            <p>Great job completing your breathing practice.</p>
+            <p>Current streak: <span id="finalStreak">0</span> days</p>
+            <button class="start-btn" onclick="resetSession()">Start New Session</button>
+        </div>
+    </div>
+
+    <!-- Calendar Modal -->
+    <div class="modal-overlay" id="calendarModal">
+        <div class="calendar-modal">
+            <div class="calendar-header">
+                <h2 class="calendar-title">Your Progress</h2>
+                <button class="close-btn" id="closeCalendar">×</button>
+            </div>
+            <div class="calendar-grid" id="calendarGrid">
+                <!-- Calendar days will be generated here -->
+            </div>
+            <div class="calendar-stats">
+                <div class="stat-item">
+                    <div class="stat-number" id="totalSessions">0</div>
+                    <div class="stat-label">Total Sessions</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="currentStreak">0</div>
+                    <div class="stat-label">Current Streak</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="longestStreak">0</div>
+                    <div class="stat-label">Longest Streak</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentSession = null;
+        let sessionTimer = null;
+        let animationFrame = null;
+        let sessionStartTime = null;
+        let cycleDuration = 10; // seconds
+        let totalSessionTime = 600; // 10 minutes in seconds
+        let remainingTime = totalSessionTime;
+        let isSessionActive = false;
+        let showInstruction = true;
+        let selectedBPM = 6;
+
+        // Local Storage Keys
+        const STORAGE_KEYS = {
+            SESSIONS: 'breathCenter_sessions',
+            STREAK: 'breathCenter_streak',
+            LAST_SESSION: 'breathCenter_lastSession'
+        };
+
+        // Initialize app
+        init();
+
+        function init() {
+            loadData();
+            setupEventListeners();
+            updateBPM(selectedBPM);
+        }
+
+        function setupEventListeners() {
+            document.getElementById('startBtn').addEventListener('click', startSession);
+            document.getElementById('streak').addEventListener('click', showCalendar);
+            document.getElementById('closeCalendar').addEventListener('click', hideCalendar);
+            document.getElementById('calendarModal').addEventListener('click', (e) => {
+                if (e.target.id === 'calendarModal') hideCalendar();
+            });
+
+            // Custom dropdown
+            const dropdownTrigger = document.getElementById('dropdownTrigger');
+            const dropdownMenu = document.getElementById('dropdownMenu');
+            const dropdownItems = document.querySelectorAll('.dropdown-item');
+
+            dropdownTrigger.addEventListener('click', () => {
+                dropdownMenu.classList.toggle('open');
+                document.getElementById('dropdownArrow').classList.toggle('open');
+            });
+
+            dropdownItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    const value = parseInt(item.dataset.value);
+                    selectBPM(value);
+                    dropdownMenu.classList.remove('open');
+                    document.getElementById('dropdownArrow').classList.remove('open');
+                });
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.custom-dropdown')) {
+                    dropdownMenu.classList.remove('open');
+                    document.getElementById('dropdownArrow').classList.remove('open');
+                }
+            });
+        }
+
+        function selectBPM(bpm) {
+            selectedBPM = bpm;
+            const durations = {6: 10, 5: 12, 4: 15, 3: 20};
+            const labels = {
+                6: '6 breaths/min (10s cycle)',
+                5: '5 breaths/min (12s cycle)',
+                4: '4 breaths/min (15s cycle)',
+                3: '3 breaths/min (20s cycle)'
+            };
+
+            // Update dropdown text
+            document.getElementById('dropdownText').textContent = labels[bpm];
+
+            // Update selected item
+            document.querySelectorAll('.dropdown-item').forEach(item => {
+                item.classList.remove('selected');
+                if (parseInt(item.dataset.value) === bpm) {
+                    item.classList.add('selected');
+                }
+            });
+
+            updateBPM(bpm);
+        }
+
+        function updateBPM(bpm) {
+            const durations = {6: 10, 5: 12, 4: 15, 3: 20};
+            cycleDuration = durations[bpm];
+        }
+
+        async function startSession() {
+            const bpm = selectedBPM;
+            
+            try {
+                // Create session locally
+                currentSession = Date.now();
+                sessionStartTime = Date.now();
+                remainingTime = totalSessionTime;
+                isSessionActive = true;
+                
+                // Show session UI
+                document.getElementById('controls').classList.add('hidden');
+                document.getElementById('sessionInfo').classList.remove('hidden');
+                document.getElementById('sessionComplete').classList.add('hidden');
+                
+                // Update phase text
+                document.getElementById('phaseText').textContent = `Phase: ${bpm} breaths/min`;
+                
+                // Show instruction text briefly
+                if (showInstruction) {
+                    document.getElementById('instructionText').classList.add('show');
+                    setTimeout(() => {
+                        document.getElementById('instructionText').classList.remove('show');
+                        showInstruction = false;
+                    }, 3000);
+                }
+                
+                // Start timers
+                startSessionTimer();
+                startBreathingAnimation();
+            } catch (error) {
+                console.error('Error starting session:', error);
+            }
+        }
+
+        function startSessionTimer() {
+            sessionTimer = setInterval(() => {
+                remainingTime--;
+                updateTimer();
+                updateProgress();
+                
+                if (remainingTime <= 0) {
+                    completeSession();
+                }
+            }, 1000);
+        }
+
+        function startBreathingAnimation() {
+            const circle = document.getElementById('breathingCircle');
+            const progressCircle = document.querySelector('.progress-ring circle');
+            const startTime = Date.now();
+            
+            function animate() {
+                if (!isSessionActive) return;
+                
+                const elapsed = (Date.now() - startTime) / 1000;
+                const cycleProgress = (elapsed % cycleDuration) / cycleDuration;
+                
+                // Sine easing for natural breathing rhythm
+                const sineProgress = Math.sin(cycleProgress * Math.PI * 2);
+                const normalizedProgress = (sineProgress + 1) / 2; // 0 to 1
+                
+                // Determine if inhaling or exhaling
+                const isInhaling = cycleProgress < 0.5;
+                
+                // Scale animation (0.6 to 1.4)
+                const scale = 0.6 + (normalizedProgress * 0.8);
+                circle.style.transform = `scale(${scale})`;
+                
+                // Color/glow animation
+                if (isInhaling) {
+                    circle.classList.remove('exhale');
+                    circle.classList.add('inhale');
+                } else {
+                    circle.classList.remove('inhale');
+                    circle.classList.add('exhale');
+                }
+                
+                // Progress ring animation
+                const circumference = 2 * Math.PI * 100; // r=100
+                const progressOffset = circumference - (normalizedProgress * circumference);
+                progressCircle.style.strokeDashoffset = progressOffset;
+                
+                animationFrame = requestAnimationFrame(animate);
+            }
+            
+            animate();
+        }
+
+        function updateTimer() {
+            const minutes = Math.floor(remainingTime / 60);
+            const seconds = remainingTime % 60;
+            document.getElementById('timer').textContent = 
+                `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function updateProgress() {
+            const progress = ((totalSessionTime - remainingTime) / totalSessionTime) * 100;
+            document.getElementById('progressFill').style.width = `${progress}%`;
+        }
+
+        async function completeSession() {
+            // Clear timers and animation
+            clearInterval(sessionTimer);
+            cancelAnimationFrame(animationFrame);
+            isSessionActive = false;
+            
+            // Reset breathing circle
+            const circle = document.getElementById('breathingCircle');
+            circle.classList.remove('inhale', 'exhale');
+            circle.style.transform = 'scale(1)';
+            
+            // Reset progress ring
+            const progressCircle = document.querySelector('.progress-ring circle');
+            progressCircle.style.strokeDashoffset = '628';
+            
+            // Save session to local storage
+            saveSession(selectedBPM);
+            
+            // Show completion screen
+            document.getElementById('sessionInfo').classList.add('hidden');
+            document.getElementById('sessionComplete').classList.remove('hidden');
+            
+            const streak = getCurrentStreak();
+            document.getElementById('finalStreak').textContent = streak;
+            
+            // Update streak display
+            updateStreakDisplay();
+        }
+
+        function resetSession() {
+            document.getElementById('sessionComplete').classList.add('hidden');
+            document.getElementById('controls').classList.remove('hidden');
+            currentSession = null;
+            remainingTime = totalSessionTime;
+            isSessionActive = false;
+        }
+
+        // Local Storage Functions
+        function loadData() {
+            updateStreakDisplay();
+        }
+
+        function saveSession(bpm) {
+            const today = new Date().toISOString().split('T')[0];
+            const sessions = getSessions();
+            
+            // Check if session already exists for today
+            const existingSession = sessions.find(s => s.date === today);
+            if (existingSession) {
+                existingSession.bpm = bpm;
+                existingSession.completed = true;
+                existingSession.completedAt = new Date().toISOString();
+            } else {
+                sessions.push({
+                    id: Date.now(),
+                    date: today,
+                    bpm: bpm,
+                    completed: true,
+                    completedAt: new Date().toISOString()
+                });
+            }
+            
+            localStorage.setItem(STORAGE_KEYS.SESSIONS, JSON.stringify(sessions));
+            localStorage.setItem(STORAGE_KEYS.LAST_SESSION, today);
+        }
+
+        function getSessions() {
+            const sessions = localStorage.getItem(STORAGE_KEYS.SESSIONS);
+            return sessions ? JSON.parse(sessions) : [];
+        }
+
+        function getCurrentStreak() {
+            const sessions = getSessions();
+            const today = new Date();
+            let streak = 0;
+            
+            for (let i = 0; i < 365; i++) {
+                const checkDate = new Date(today);
+                checkDate.setDate(today.getDate() - i);
+                const dateStr = checkDate.toISOString().split('T')[0];
+                
+                const hasSession = sessions.some(s => s.date === dateStr && s.completed);
+                if (hasSession) {
+                    streak++;
+                } else if (i > 0) { // Don't break on first day if no session
+                    break;
+                }
+            }
+            
+            return streak;
+        }
+
+        function getLongestStreak() {
+            const sessions = getSessions();
+            if (sessions.length === 0) return 0;
+            
+            let longestStreak = 0;
+            let currentStreak = 0;
+            let lastDate = null;
+            
+            // Sort sessions by date
+            const sortedSessions = sessions
+                .filter(s => s.completed)
+                .sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            for (const session of sortedSessions) {
+                const sessionDate = new Date(session.date);
+                
+                if (lastDate) {
+                    const daysDiff = Math.floor((sessionDate - lastDate) / (1000 * 60 * 60 * 24));
+                    if (daysDiff === 1) {
+                        currentStreak++;
+                    } else {
+                        longestStreak = Math.max(longestStreak, currentStreak);
+                        currentStreak = 1;
+                    }
+                } else {
+                    currentStreak = 1;
+                }
+                
+                lastDate = sessionDate;
+            }
+            
+            return Math.max(longestStreak, currentStreak);
+        }
+
+        function updateStreakDisplay() {
+            const streak = getCurrentStreak();
+            document.getElementById('streak').textContent = `Streak: ${streak}`;
+        }
+
+        // Calendar Functions
+        function showCalendar() {
+            const modal = document.getElementById('calendarModal');
+            modal.classList.add('open');
+            generateCalendar();
+            updateCalendarStats();
+        }
+
+        function hideCalendar() {
+            const modal = document.getElementById('calendarModal');
+            modal.classList.remove('open');
+        }
+
+        function generateCalendar() {
+            const grid = document.getElementById('calendarGrid');
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = today.getMonth();
+            
+            // Get first day of month and number of days
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const daysInMonth = lastDay.getDate();
+            const startingDayOfWeek = firstDay.getDay();
+            
+            // Clear grid
+            grid.innerHTML = '';
+            
+            // Add day headers
+            const dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            dayHeaders.forEach(day => {
+                const dayHeader = document.createElement('div');
+                dayHeader.textContent = day;
+                dayHeader.style.fontWeight = '600';
+                dayHeader.style.color = '#666';
+                dayHeader.style.fontSize = '0.8rem';
+                grid.appendChild(dayHeader);
+            });
+            
+            // Add empty cells for days before month starts
+            for (let i = 0; i < startingDayOfWeek; i++) {
+                const emptyDay = document.createElement('div');
+                emptyDay.classList.add('calendar-day', 'other-month');
+                grid.appendChild(emptyDay);
+            }
+            
+            // Add days of month
+            const sessions = getSessions();
+            const todayStr = today.toISOString().split('T')[0];
+            
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayElement = document.createElement('div');
+                dayElement.classList.add('calendar-day');
+                dayElement.textContent = day;
+                
+                const dateStr = new Date(year, month, day).toISOString().split('T')[0];
+                const hasSession = sessions.some(s => s.date === dateStr && s.completed);
+                
+                if (dateStr === todayStr) {
+                    dayElement.classList.add('today');
+                }
+                
+                if (hasSession) {
+                    dayElement.classList.add('completed');
+                }
+                
+                grid.appendChild(dayElement);
+            }
+        }
+
+        function updateCalendarStats() {
+            const sessions = getSessions();
+            const completedSessions = sessions.filter(s => s.completed);
+            
+            document.getElementById('totalSessions').textContent = completedSessions.length;
+            document.getElementById('currentStreak').textContent = getCurrentStreak();
+            document.getElementById('longestStreak').textContent = getLongestStreak();
+        }
+    </script>
+</body>
+</html>
