@@ -116,5 +116,8 @@ def get_cycle_duration(bpm):
     durations = {6: 10, 5: 12, 4: 15, 3: 20}
     return durations.get(bpm, 10)
 
+# For Vercel deployment
+handler = app
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
