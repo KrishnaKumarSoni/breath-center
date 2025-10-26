@@ -502,7 +502,7 @@
     <div class="modal-overlay" id="calendarModal">
         <div class="calendar-modal">
             <div class="calendar-header">
-                <h2 class="calendar-title">Your Progress</h2>
+                <h2 class="calendar-title">Last 30 Days</h2>
                 <button class="close-btn" id="closeCalendar">×</button>
             </div>
             <div class="calendar-grid" id="calendarGrid">
@@ -866,14 +866,6 @@
         function generateCalendar() {
             const grid = document.getElementById('calendarGrid');
             const today = new Date();
-            const year = today.getFullYear();
-            const month = today.getMonth();
-            
-            // Get first day of month and number of days
-            const firstDay = new Date(year, month, 1);
-            const lastDay = new Date(year, month + 1, 0);
-            const daysInMonth = lastDay.getDate();
-            const startingDayOfWeek = firstDay.getDay();
             
             // Clear grid
             grid.innerHTML = '';
@@ -889,23 +881,20 @@
                 grid.appendChild(dayHeader);
             });
             
-            // Add empty cells for days before month starts
-            for (let i = 0; i < startingDayOfWeek; i++) {
-                const emptyDay = document.createElement('div');
-                emptyDay.classList.add('calendar-day', 'other-month');
-                grid.appendChild(emptyDay);
-            }
-            
-            // Add days of month
+            // Generate 30-day rolling calendar
             const sessions = getSessions();
             const todayStr = today.toISOString().split('T')[0];
             
-            for (let day = 1; day <= daysInMonth; day++) {
+            // Start from 29 days ago to show 30 days total
+            for (let i = 29; i >= 0; i--) {
+                const checkDate = new Date(today);
+                checkDate.setDate(today.getDate() - i);
+                
                 const dayElement = document.createElement('div');
                 dayElement.classList.add('calendar-day');
-                dayElement.textContent = day;
+                dayElement.textContent = checkDate.getDate();
                 
-                const dateStr = new Date(year, month, day).toISOString().split('T')[0];
+                const dateStr = checkDate.toISOString().split('T')[0];
                 const hasSession = sessions.some(s => s.date === dateStr && s.completed);
                 
                 if (dateStr === todayStr) {
@@ -916,6 +905,13 @@
                     dayElement.classList.add('completed');
                 }
                 
+                // Add tooltip with date
+                dayElement.title = checkDate.toLocaleDateString('en-US', { 
+                    weekday: 'short', 
+                    month: 'short', 
+                    day: 'numeric' 
+                });
+                
                 grid.appendChild(dayElement);
             }
         }
@@ -924,6 +920,7 @@
             const sessions = getSessions();
             const completedSessions = sessions.filter(s => s.completed);
             
+            // Show all-time metrics, not just 30-day period
             document.getElementById('totalSessions').textContent = completedSessions.length;
             document.getElementById('currentStreak').textContent = getCurrentStreak();
             document.getElementById('longestStreak').textContent = getLongestStreak();
